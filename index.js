@@ -301,7 +301,7 @@ app.listen(PORT || 3000, () => {
         }
 
         console.log('Iniciando userbot...');
-        const client = new TelegramClient(new StringSession(TELEGRAM_SESSION), parseInt(apiId), apiHash, { connectionRetries: 5 });
+        const client = new TelegramClient(new StringSession(TELEGRAM_SESSION), API_ID, API_HASH, { connectionRetries: 5 });
 
         try {
             await client.start({
