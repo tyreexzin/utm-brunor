@@ -204,15 +204,15 @@ async function salvarFrontendUtms(data) {
     const sql = `
         INSERT INTO frontend_utms (
             unique_click_id, timestamp_ms, valor, fbclid, fbc, fbp, utm_source, utm_medium, 
-            utm_campaign, utm_content, utm_term, ip, user_agent
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13);
+            utm_campaign, utm_content, utm_term, ip, user_agent, state
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14); // <--- Adicione $14 aqui
     `;
     const valores = [
         data.unique_click_id, data.timestamp, data.valor,
         data.fbclid || null, data.fbc || null, data.fbp || null,
         data.utm_source || null, data.utm_medium || null, data.utm_campaign || null,
         data.utm_content || null, data.utm_term || null,
-        data.ip || null, data.user_agent || null
+        data.ip || null, data.user_agent || null, data.state || null 
     ];
     try {
         await pool.query(sql, valores);
@@ -267,6 +267,44 @@ app.post('/frontend-utm-data', (req, res) => {
 app.get('/ping', (req, res) => {
     console.log('💚 [PING] Recebida requisição /ping. Serviço está ativo.');
     res.status(200).send('Pong!');
+});
+
+app.get('/api/dashboard-data', async (req, res) => {
+    try {
+        // Consulta para cliques na página (total e por estado)
+        const clicksData = await pool.query(`
+            SELECT 
+                COUNT(*) AS total_clicks,
+                state
+            FROM frontend_utms
+            GROUP BY state
+            ORDER BY total_clicks DESC;
+        `);
+
+        // Consulta para faturamento pago total
+        const paidRevenueData = await pool.query(`
+            SELECT SUM(valor) AS paid_revenue FROM vendas;
+        `);
+
+        // Extrai os valores das consultas
+        const totalClicks = clicksData.rows.reduce((acc, row) => acc + parseInt(row.total_clicks), 0);
+        const totalPaidRevenue = paidRevenueData.rows[0]?.paid_revenue || 0;
+
+        // Formata a resposta
+        const dashboardData = {
+            totalClicks: totalClicks,
+            clicksByState: clicksData.rows.map(row => ({
+                state: row.state || 'Não Informado',
+                count: parseInt(row.total_clicks)
+            })),
+            totalPaidRevenue: totalPaidRevenue,
+        };
+
+        res.json(dashboardData);
+    } catch (err) {
+        console.error('❌ Erro ao buscar dados para o painel:', err.message);
+        res.status(500).send('Erro ao buscar dados.');
+    }
 });
 
 // --- INICIALIZAÇÃO E LÓGICA PRINCIPAL ---
