@@ -271,7 +271,6 @@ app.get('/ping', (req, res) => {
 
 // --- ENDPOINT PARA PAINEL DE DADOS ---
 app.get('/api/dashboard-data', async (req, res) => {
-    // Objeto de mapeamento para traduzir o nome do estado
     const stateMap = {
         'Federal District': 'Distrito Federal',
         'Acre': 'Acre',
@@ -303,17 +302,19 @@ app.get('/api/dashboard-data', async (req, res) => {
     };
 
     try {
+        // CORREÇÃO: Adiciona filtro para o dia atual (CURRENT_DATE)
         const clicksData = await pool.query(`
             SELECT 
                 COUNT(*) AS total_clicks,
                 state
             FROM frontend_utms
+            WHERE received_at >= CURRENT_DATE
             GROUP BY state
             ORDER BY total_clicks DESC;
         `);
 
         const paidRevenueData = await pool.query(`
-            SELECT SUM(valor) AS paid_revenue FROM vendas;
+            SELECT SUM(valor) AS paid_revenue 
             FROM vendas
             WHERE created_at >= CURRENT_DATE;
         `);
@@ -324,7 +325,6 @@ app.get('/api/dashboard-data', async (req, res) => {
         const dashboardData = {
             totalClicks: totalClicks,
             clicksByState: clicksData.rows.map(row => ({
-                // CORREÇÃO: Traduz o nome do estado usando o stateMap
                 state: stateMap[row.state] || row.state || 'Não Informado',
                 count: parseInt(row.total_clicks)
             })),
