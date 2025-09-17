@@ -269,9 +269,40 @@ app.get('/ping', (req, res) => {
     res.status(200).send('Pong!');
 });
 
+// --- ENDPOINT PARA PAINEL DE DADOS ---
 app.get('/api/dashboard-data', async (req, res) => {
+    // Objeto de mapeamento para traduzir o nome do estado
+    const stateMap = {
+        'Federal District': 'Distrito Federal',
+        'Acre': 'Acre',
+        'Alagoas': 'Alagoas',
+        'Amapá': 'Amapá',
+        'Amazonas': 'Amazonas',
+        'Bahia': 'Bahia',
+        'Ceará': 'Ceará',
+        'Espírito Santo': 'Espírito Santo',
+        'Goiás': 'Goiás',
+        'Maranhão': 'Maranhão',
+        'Mato Grosso': 'Mato Grosso',
+        'Mato Grosso do Sul': 'Mato Grosso do Sul',
+        'Minas Gerais': 'Minas Gerais',
+        'Pará': 'Pará',
+        'Paraíba': 'Paraíba',
+        'Paraná': 'Paraná',
+        'Pernambuco': 'Pernambuco',
+        'Piauí': 'Piauí',
+        'Rio de Janeiro': 'Rio de Janeiro',
+        'Rio Grande do Norte': 'Rio Grande do Norte',
+        'Rio Grande do Sul': 'Rio Grande do Sul',
+        'Rondônia': 'Rondônia',
+        'Roraima': 'Roraima',
+        'Santa Catarina': 'Santa Catarina',
+        'São Paulo': 'São Paulo',
+        'Sergipe': 'Sergipe',
+        'Tocantins': 'Tocantins'
+    };
+
     try {
-        // Consulta para cliques na página (total e por estado)
         const clicksData = await pool.query(`
             SELECT 
                 COUNT(*) AS total_clicks,
@@ -281,20 +312,20 @@ app.get('/api/dashboard-data', async (req, res) => {
             ORDER BY total_clicks DESC;
         `);
 
-        // Consulta para faturamento pago total
         const paidRevenueData = await pool.query(`
             SELECT SUM(valor) AS paid_revenue FROM vendas;
+            FROM vendas
+            WHERE created_at >= CURRENT_DATE;
         `);
 
-        // Extrai os valores das consultas
         const totalClicks = clicksData.rows.reduce((acc, row) => acc + parseInt(row.total_clicks), 0);
         const totalPaidRevenue = paidRevenueData.rows[0]?.paid_revenue || 0;
 
-        // Formata a resposta
         const dashboardData = {
             totalClicks: totalClicks,
             clicksByState: clicksData.rows.map(row => ({
-                state: row.state || 'Não Informado',
+                // CORREÇÃO: Traduz o nome do estado usando o stateMap
+                state: stateMap[row.state] || row.state || 'Não Informado',
                 count: parseInt(row.total_clicks)
             })),
             totalPaidRevenue: totalPaidRevenue,
