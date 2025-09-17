@@ -205,7 +205,7 @@ async function salvarFrontendUtms(data) {
         INSERT INTO frontend_utms (
             unique_click_id, timestamp_ms, valor, fbclid, fbc, fbp, utm_source, utm_medium, 
             utm_campaign, utm_content, utm_term, ip, user_agent, state
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14); // <--- Adicione $14 aqui
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14);
     `;
     const valores = [
         data.unique_click_id, data.timestamp, data.valor,
